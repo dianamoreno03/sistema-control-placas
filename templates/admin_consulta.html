@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrador - Buscador </title>
+    <style>
+        /* Estilos generales */
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f0f4f8; }
+        .header { background-color: #4b8cff; padding: 15px 0; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header a { color: white; text-decoration: none; padding: 10px 15px; margin: 0 8px; border-radius: 5px; font-weight: 600; transition: background-color 0.3s; }
+        .header a:hover { background-color: #3a75e0; }
+        .header .active { background-color: #ffffff; color: #4b8cff; }
+        .container { max-width: 1000px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #4b8cff; margin-bottom: 30px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0;}
+        
+        /* Buscador (Reciclado) */
+        .search-container { text-align: center; margin-bottom: 30px; }
+        .search-container input[type="text"] { padding: 10px; font-size: 1.1em; border: 2px solid #ccc; border-radius: 5px; width: 300px; margin-right: 10px; }
+        .search-container button { padding: 10px 20px; font-size: 1.1em; background-color: #ff9933; color: white; border: none; border-radius: 5px; cursor: pointer; }
+
+        /* Resultados */
+        .resultado-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .info-box { border: 1px solid #ddd; padding: 15px; border-radius: 5px; background-color: #e6f0ff; }
+        .alerta-roja { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 5px; font-weight: bold; text-align: center; }
+        
+        /* Historial de Alertas */
+        .historial-box { grid-column: 1 / 3; margin-top: 20px; }
+        .historial-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .historial-table th, .historial-table td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 0.85em; }
+        .historial-table th { background-color: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('main.admin_buscar_placa') }}" class="active">BUSCAR </a>
+        <a href="{{ url_for('main.admin_register') }}">REGISTRAR PLACA</a>
+        <a href="{{ url_for('main.admin_alerts') }}">ALERTAS</a>
+        <a href="{{ url_for('main.operador_consulta') }}" style="float: right;">MÓDULO OPERADOR</a>
+    </div>
+
+    <div class="container">
+        <h2>Buscador Avanzado / Historial por Placa</h2>
+
+        <div class="search-container">
+            <form method="POST" action="{{ url_for('main.admin_buscar_placa') }}">
+                <input type="text" name="placa_input" placeholder="INGRESE NÚMERO DE PLACA" required>
+                <button type="submit">Buscar Historial</button>
+            </form>
+        </div>
+
+        {% if info %}
+            <hr>
+            <h3>Resultados para Placa: {{ info.placa }}</h3>
+            <div class="resultado-grid">
+                
+                <div class="info-box">
+                    <h4>Datos del Empleado</h4>
+                    <p><strong>Nombre:</strong> {{ info.nombre }} {{ info.apellido }}</p>
+                    <p><strong>Puesto:</strong> {{ info.puesto }}</p>
+                    <p><strong>Correo:</strong> {{ info.correo }}</p>
+                </div>
+                
+                <div class="info-box">
+                    <h4>Estado de Acceso</h4>
+                    {% if info.estado_acceso == 'BLOQUEADO' %}
+                        <div class="alerta-roja">ACCESO BLOQUEADO</div>
+                    {% else %}
+                        <p style="color: green; font-weight: bold;">ACCESO ACTIVO</p>
+                    {% endif %}
+                    <hr>
+                    <h4>Datos del Vehículo</h4>
+                    <p><strong>Marca/Modelo:</strong> {{ info.marca }} {{ info.modelo }}</p>
+                    <p><strong>Color:</strong> {{ info.color }}</p>
+                </div>
+            </div>
+
+            <div class="historial-box">
+                <h4>Historial de Sanciones ({{ info.nombre }})</h4>
+                
+                {% if alerts %}
+                    <table class="historial-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Comentario</th>
+                                <th>Registró</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in alerts %}
+                            <tr>
+                                <td>{{ alert.fecha_hora_alerta }}</td>
+                                <td>{{ alert.tipo_alerta }}</td>
+                                <td>{{ alert.comentario_operador }}</td>
+                                <td>{{ alert.operador_registra }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No hay historial de sanciones registrado para esta placa.</p>
+                {% endif %}
+            </div>
+
+        {% elif request.method == 'POST' %}
+            <div class="alerta-roja" style="margin-top: 20px;">
+                Placa NO ENCONTRADA en el sistema.
+            </div>
+        {% endif %}
+
+    </div>
+</body>
+</html>

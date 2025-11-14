@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrador - Historial de Alertas</title>
+    <style>
+        /* Estilos UX/UI */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; background-color: #f4f6f8; color: #333; }
+        .header { background-color: #4b8cff; padding: 15px 0; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header a { color: white; text-decoration: none; padding: 10px 15px; margin: 0 8px; border-radius: 5px; font-weight: 600; transition: background-color 0.3s; }
+        .header a:hover { background-color: #3a75e0; }
+        .header .active { background-color: #ffffff; color: #4b8cff; }
+        .container { max-width: 1200px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+        h2 { text-align: center; color: #4b8cff; margin-bottom: 30px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0;}
+        /* Buscador */
+        .search-container { text-align: center; margin-bottom: 30px; }
+        .search-container input[type="text"] { padding: 10px; font-size: 1.0em; border: 2px solid #ccc; border-radius: 5px; width: 350px; margin-right: 10px; }
+        .search-container button { padding: 10px 20px; font-size: 1.0em; background-color: #ff9933; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.3s; }
+        .search-container a { font-size: 0.9em; }
+        /* Tabla */
+        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 20px; border-radius: 8px; overflow: hidden; }
+        th { background-color: #ff9933; color: white; padding: 12px 15px; text-align: left; font-size: 0.95em; font-weight: 700; }
+        td { border-bottom: 1px solid #f0f0f0; padding: 12px 15px; font-size: 0.9em; vertical-align: top;}
+        tr:nth-child(even) { background-color: #f9f9f9; } 
+        tr:hover { background-color: #e6f0ff; } 
+        .tipo-Mal { color: #d9534f; font-weight: 600; } 
+        .tipo-Entrada { color: #f0ad4e; font-weight: 600; } 
+        .tipo-General { color: #007bff; font-weight: 600; } 
+        .placa-style { font-weight: 700; color: #333; }
+        .comment-style { font-style: italic; color: #666; max-width: 300px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('main.admin_dashboard') }}">BUSCAR (Bloqueo)</a>
+        <a href="{{ url_for('main.admin_register') }}">REGISTRAR PLACA</a>
+        <a href="{{ url_for('main.admin_alerts') }}" class="active">ALERTAS</a>
+        <a href="{{ url_for('main.operador_consulta') }}" style="float: right;">MÓDULO OPERADOR</a>
+    </div>
+
+    <div class="container">
+        <h2>Historial y Control de Alertas </h2>
+        
+        <div class="search-container">
+            <form method="GET" action="{{ url_for('main.admin_alerts') }}">
+                <input type="text" name="q" placeholder="Buscar por Placa, Nombre o Apellido..." value="{{ search_query if search_query }}" required>
+                <button type="submit">Buscar Alertas</button>
+                {% if search_query %}
+                    <a href="{{ url_for('main.admin_alerts') }}" style="margin-left: 10px; color: #dc3545; text-decoration: none;">Limpiar Búsqueda</a>
+                {% endif %}
+            </form>
+        </div>
+
+        <h4 style="text-align: center; color: #666; margin-top: 15px;">{{ message }}</h4>
+        
+        {% if alerts %}
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 10%;">Fecha y Hora</th>
+                        <th style="width: 8%;">Placa</th>
+                        <th style="width: 12%;">Tipo de Alerta</th>
+                        <th style="width: 25%;">Empleado (Correo)</th>
+                        <th style="width: 10%;">Puesto</th>
+                        <th style="width: 25%;">Comentarios </th>
+                        <th style="width: 10%;">Registrado por</th> 
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for alert in alerts %}
+                    <tr>
+                        <td>{{ alert.fecha_hora_alerta.split(' ')[0] }}<br>{{ alert.fecha_hora_alerta.split(' ')[1] }}</td>
+                        <td class="placa-style">{{ alert.placa_asociada }}</td>
+                        
+                        {% set tipo_clase = alert.tipo_alerta.split(' ')[0] %}
+                        <td class="tipo-{{ tipo_clase }}">{{ alert.tipo_alerta }}</td>
+                        
+                        <td>
+                            {{ alert.nombre }} {{ alert.apellido }}<br>
+                            <span style="color: #007bff; font-size: 0.85em;">({{ alert.correo }})</span>
+                        </td>
+                        <td>{{ alert.puesto }}</td>
+                        <td class="comment-style">{{ alert.comentario_operador }}</td>
+                        <td>{{ alert.operador_registra }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p style="text-align: center; margin-top: 50px; font-size: 1.2em; color: #666;">
+                <span style="font-size: 1.5em; display: block; margin-bottom: 10px;">🛡️</span>
+                No hay alertas o sanciones registradas 
+            </p>
+        {% endif %}
+    </div>
+</body>
+</html>

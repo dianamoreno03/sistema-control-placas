@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Administración - Bloqueo Rápido</title>
+    <style>
+        /* Estilos de UX/UI */
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f0f4f8; }
+        .header { background-color: #4b8cff; padding: 15px 0; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header a { color: white; text-decoration: none; padding: 10px 15px; margin: 0 8px; border-radius: 5px; font-weight: 600; transition: background-color 0.3s; }
+        .header a:hover { background-color: #3a75e0; }
+        .header .active { background-color: #ffffff; color: #4b8cff; }
+        .container { max-width: 900px; margin: 30px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2 { border-bottom: 2px solid #ccc; padding-bottom: 10px; text-align: center; color: #4b8cff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #ff9933; color: white; }
+        .status-ACTIVO { color: green; font-weight: bold; }
+        .status-BLOQUEADO { color: red; font-weight: bold; }
+        .btn-toggle { padding: 5px 10px; border: none; border-radius: 4px; cursor: pointer; color: white; }
+        .btn-block { background-color: #dc3545; }
+        .btn-activate { background-color: #28a745; }
+        .flash-message { padding: 10px; margin-bottom: 15px; border-radius: 4px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('main.admin_buscar_placa') }}" class="active">BUSCAR (Bloqueo)</a>
+        <a href="{{ url_for('main.admin_register') }}">REGISTRAR PLACA</a>
+        <a href="{{ url_for('main.admin_alerts') }}">ALERTAS</a>
+        <a href="{{ url_for('main.operador_consulta') }}" style="float: right;">MÓDULO OPERADOR</a>
+    </div>
+
+    <div class="container">
+        <h2>Gestión Rápida de Bloqueo / Activación</h2>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-message">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <p style="text-align: center;">Para buscar historial de una placa específica, utiliza el buscador de la página principal.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Placa</th>
+                    <th>Empleado</th>
+                    <th>Estado de Acceso</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for plate in plates %}
+                    <tr>
+                        <td>{{ plate['placa'] }}</td>
+                        <td>{{ plate['nombre'] }} {{ plate['apellido'] }}</td>
+                        <td class="status-{{ plate['estado_acceso'] }}">
+                            {{ plate['estado_acceso'] }}
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('main.admin_toggle_access', asociacion_id=plate['id_asociacion']) }}" style="display:inline;">
+                                <input type="hidden" name="current_status" value="{{ plate['estado_acceso'] }}">
+                                <input type="hidden" name="placa_asociada" value="{{ plate['placa'] }}">
+                                
+                                {% if plate['estado_acceso'] == 'ACTIVO' %}
+                                    <button type="submit" class="btn-toggle btn-block">BLOQUEAR ACCESO</button>
+                                {% else %}
+                                    <button type="submit" class="btn-toggle btn-activate">ACTIVAR ACCESO</button>
+                                {% endif %}
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

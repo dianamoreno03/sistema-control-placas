@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Módulo de Operador - Chequeo de Placas</title>
+    <style>
+        /* Estilos generales */
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #e9ecef; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.2); }
+        h1 { text-align: center; color: #333; margin-bottom: 5px; }
+        h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; color: #007bff; text-align: center; margin-bottom: 25px; }
+        .nav-link { text-align: center; margin-bottom: 15px; }
+        .nav-link a { color: #007bff; text-decoration: none; font-weight: bold; }
+
+        /* BUSCADOR Y LPR */
+        .search-container { text-align: center; margin-bottom: 30px; }
+        .search-container input[type="text"] {
+            padding: 10px;
+            font-size: 1.1em;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            width: 300px;
+            margin-right: 10px;
+        }
+        .search-container button {
+            padding: 10px 20px;
+            font-size: 1.1em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .search-container button:hover {
+            background-color: #0056b3;
+        }
+        /* Estilos para el botón de subida de imagen (LPR) */
+        .btn-lpr { 
+            background-color: #28a745; /* Color verde para la cámara */
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer;
+            font-weight: bold;
+            display: inline-block;
+            transition: background-color 0.3s;
+        }
+        .btn-lpr:hover {
+            background-color: #1e7e34;
+        }
+
+
+        /* RESULTADOS Y ALERTAS */
+        .alerta-roja { padding: 15px; border-radius: 5px; background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; font-size: 1.2em; font-weight: bold; text-align: center; margin-bottom: 20px; }
+        .acceso-permitido { padding: 15px; border-radius: 5px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; text-align: center; font-weight: bold; margin-bottom: 20px; }
+        
+        .datos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        
+        .datos-persona { border: 1px solid #ccc; padding: 15px; border-radius: 5px; background-color: #e2f0ff; }
+        .alerta-form { padding: 15px; border: 1px solid #ffc107; border-radius: 5px; background-color: #fff3cd; }
+        
+        .datos-persona p, .alerta-form p { margin: 5px 0; }
+        .alerta-form textarea, .alerta-form select { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; box-sizing: border-box; }
+        
+        .btn-alerta { background-color: #ffc107; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background-color 0.3s; margin-top: 10px;}
+        .btn-alerta:hover { background-color: #e0a800; }
+        
+        .flash-message { padding: 10px; margin-bottom: 15px; border-radius: 4px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SISTEMA DE CONTROL Y SANCIONES</h1>
+        <h2>Módulo de Chequeo para Operadores</h2>
+        <div class="nav-link">
+            <p><a href="{{ url_for('main.admin_dashboard') }}">Ir a Panel de Administración</a></p>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-message">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="search-container">
+            <form id="lpr-form" method="POST" action="{{ url_for('main.operador_buscar') }}" enctype="multipart/form-data">
+                
+                <input type="text" id="placa_input" name="placa_input" placeholder="INGRESE NÚMERO DE PLACA" style="width: 300px;">
+                
+                <button type="submit" style="background-color: #007bff;">
+                    Buscar Placa
+                </button>
+                
+                <span style="margin: 0 15px;">ó</span>
+                
+                <label for="placa_file" class="btn-lpr">
+                    Abrir Cámara 
+                </label>
+                <input type="file" name="placa_file" id="placa_file" accept="image/*" capture="camera" style="display: none;">
+                
+            </form>
+        </div>
+        <hr>
+
+        {% if error %}
+            <div class="alerta-roja">{{ error }}</div>
+        {% endif %}
+
+        {% if data %}
+            
+            {% if data.estado_acceso == 'BLOQUEADO' %}
+                <div class="alerta-roja">
+                    ACCESO DENEGADO <br>
+                    El acceso está BLOQUEADO por el administrador.
+                </div>
+            {% else %}
+                 <div class="acceso-permitido">
+                    ACCESO PERMITIDO - Estado: {{ data.estado_acceso }}
+                </div>
+            {% endif %}
+
+            <div class="datos-grid">
+                
+                <div class="datos-persona">
+                    <h3>Datos de Empleado y Vehículo:</h3>
+                    <p><strong>Nombre:</strong> {{ data.nombre }} {{ data.apellido }}</p>
+                    <p><strong>Puesto:</strong> {{ data.puesto }}</p>
+                    <p><strong>Teléfono (Para Alertas):</strong> {{ data.telefono }}</p>
+                    <hr>
+                    <p><strong>Placa:</strong> {{ data.placa }}</p>
+                    <p><strong>Marca/Modelo:</strong> {{ data.marca }} {{ data.modelo }}</p>
+                    <p><strong>Color:</strong> {{ data.color }}</p>
+                </div>
+
+                <div class="alerta-form">
+                    <h4>Registrar Nueva Alerta/Sanción:</h4>
+                    <form method="POST" action="{{ url_for('main.operador_alertar') }}">
+                        <input type="hidden" name="placa_reg" value="{{ data.placa }}">
+                        <input type="hidden" name="asociacion_id" value="{{ data.id_asociacion }}">
+
+                        <label for="tipo_alerta">Tipo de Alerta:</label>
+                        <select id="tipo_alerta" name="tipo_alerta" required>
+                            <option value="">--- Seleccionar Tipo ---</option>
+                            <option value="Mal Parqueo">Mal Parqueo</option>
+                            <option value="Entrada No Autorizada">Entrada No Autorizada</option>
+                            <option value="Incidencia General">Incidencia General</option>
+                            <option value="Aviso">Aviso (Sin Sanción)</option>
+                        </select>
+                        
+                        <label for="comentario">Comentario:</label>
+                        <textarea id="comentario" name="comentario" placeholder="Detalles de la observación o sanción..."></textarea>
+                        
+                        <button type="submit" class="btn-alerta">Marcar Bandera de Alerta</button>
+                    </form>
+                </div>
+            </div>
+
+        {% endif %}
+
+    </div>
+
+    <script>
+        // Obtiene  archivo oculto
+        const fileInput = document.getElementById('placa_file');
+        // Obtiene el formulario por  ID
+        const searchForm = document.getElementById('lpr-form'); 
+
+        //  para cuando se selecciona un archivo 
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length > 0) {
+                // Si el usuario seleccionó un archivo
+                searchForm.submit();
+            }
+        });
+    </script>
+</body>
+</html>

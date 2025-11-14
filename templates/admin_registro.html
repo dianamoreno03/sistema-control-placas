@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administrador - Registrar Placa</title>
+    <style>
+        /* (Estilos son los mismos, solo se añade el estilo 'active') */
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #f0f4f8; }
+        .header { background-color: #4b8cff; padding: 15px 0; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header a { 
+            color: white; 
+            text-decoration: none; 
+            padding: 10px 15px; 
+            margin: 0 8px; 
+            border-radius: 5px; 
+            font-weight: 600;
+            transition: background-color 0.3s; 
+        }
+        .header a:hover { background-color: #3a75e0; }
+        .header .active { background-color: #ffffff; color: #4b8cff; }
+        /* Contenido Principal */
+        .container { max-width: 900px; margin: 30px auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-bottom: 25px; }
+        .form-group { display: flex; justify-content: space-between; gap: 20px; }
+        .form-column { flex: 1; }
+        input[type="text"], input[type="email"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        .actions { text-align: center; margin-top: 30px; }
+        .btn { padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin: 0 10px; transition: background-color 0.3s; }
+        .btn-guardar { background-color: #28a745; color: white; }
+        .btn-cancelar { background-color: #dc3545; color: white; text-decoration: none; }
+        .flash-message { padding: 15px; margin-bottom: 20px; border-radius: 5px; background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; text-align: center;}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="{{ url_for('main.admin_dashboard') }}">BUSCAR (Bloqueo)</a>
+        <a href="{{ url_for('main.admin_register') }}" class="active">REGISTRAR PLACA</a>
+        <a href="{{ url_for('main.admin_alerts') }}">ALERTAS</a>
+        <a href="{{ url_for('main.operador_consulta') }}" style="float: right;">MÓDULO OPERADOR</a>
+    </div>
+
+    <div class="container">
+        <h2>REGISTRO DE DATOS</h2>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-message">
+                    {% for message in messages %}
+                        <p>{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('main.admin_register_submit') }}">
+            <div class="form-group">
+       <div class="form-column">
+                    <h3>Datos del Empleado</h3>
+                    <input type="text" name="nombre" placeholder="Nombre(s)" required>
+                    <input type="text" name="apellido" placeholder="Apellido(s)" required>
+                    <input type="text" name="puesto" placeholder="Puesto" required>
+                    <input type="text" name="telefono" placeholder="Teléfono" required> 
+                </div>
+                
+                <div class="form-column">
+                    <h3>Datos del Vehículo</h3>
+                    <input type="text" name="marca" placeholder="Marca" required>
+                    <input type="text" name="modelo" placeholder="Modelo" required>
+                    <input type="text" name="color" placeholder="Color" required>
+                    <input type="text" name="placa" placeholder="Placa" required>
+                </div>
+            </div>
+            
+            <div class="actions">
+                <button type="submit" class="btn btn-guardar">Guardar</button>
+                <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-cancelar">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
