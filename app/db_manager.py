@@ -10,7 +10,7 @@ def get_db_connection():
     return conn
 
 # ----------------------------------------------------------------------
-# FUNCIONES DE CREACIÓN DE BASE DE DATOS (FINAL Y CORREGIDO)
+# FUNCIONES DE CREACIÓN DE BASE DE DATOS 
 # ----------------------------------------------------------------------
 
 def create_tables():
@@ -118,7 +118,7 @@ def seed_data():
         conn.commit()
     conn.close()
 
-# --- FUNCIONES CRUD (Se mantienen correctas) ---
+# --- FUNCIONES CRUD ---
 
 def get_all_plates_association():
     conn = get_db_connection()
