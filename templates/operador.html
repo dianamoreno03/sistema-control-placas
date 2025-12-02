@@ -35,7 +35,7 @@
         .search-container button:hover {
             background-color: #0056b3;
         }
-        /* Estilos para el botón de subida de imagen (LPR) */
+        /* Estilos para el botón de captura (LPR) */
         .btn-lpr { 
             background-color: #28a745; /* Color verde para la cámara */
             color: white; 
@@ -88,22 +88,23 @@
         {% endwith %}
 
         <div class="search-container">
-            <form id="lpr-form" method="POST" action="{{ url_for('main.operador_buscar') }}" enctype="multipart/form-data">
-                
+            <div id="capture-interface" style="margin-bottom: 20px;">
+                <video id="video-stream" width="450" height="300" autoplay style="border: 1px solid #ccc; background-color: black; margin-bottom: 10px;"></video>
+                <canvas id="canvas-capture" width="450" height="300" style="display: none;"></canvas>
+            </div>
+            
+            <form id="manual-form" method="POST" action="{{ url_for('main.operador_buscar') }}" style="display:inline-block;">
                 <input type="text" id="placa_input" name="placa_input" placeholder="INGRESE NÚMERO DE PLACA" style="width: 300px;">
-                
                 <button type="submit" style="background-color: #007bff;">
-                    Buscar Placa
+                    Buscar Manual
                 </button>
-                
-                <span style="margin: 0 15px;">ó</span>
-                
-                <label for="placa_file" class="btn-lpr">
-                    Abrir Cámara 
-                </label>
-                <input type="file" name="placa_file" id="placa_file" accept="image/*" capture="camera" style="display: none;">
-                
             </form>
+            
+            <span style="margin: 0 15px;">ó</span>
+            
+            <button id="capture-button" class="btn-lpr" style="padding: 10px 30px;">
+                📸 Capturar y Buscar (LPR)
+            </button>
         </div>
         <hr>
 
@@ -115,12 +116,12 @@
             
             {% if data.estado_acceso == 'BLOQUEADO' %}
                 <div class="alerta-roja">
-                    ACCESO DENEGADO <br>
-                    El acceso está BLOQUEADO por el administrador.
+                    🚨 **ACCESO DENEGADO** 🚨 <br>
+                    El acceso está **BLOQUEADO** por el administrador.
                 </div>
             {% else %}
                  <div class="acceso-permitido">
-                    ACCESO PERMITIDO - Estado: {{ data.estado_acceso }}
+                    ✅ ACCESO PERMITIDO - Estado: **{{ data.estado_acceso }}**
                 </div>
             {% endif %}
 
@@ -165,18 +166,79 @@
     </div>
 
     <script>
-        // Obtiene  archivo oculto
-        const fileInput = document.getElementById('placa_file');
-        // Obtiene el formulario por  ID
-        const searchForm = document.getElementById('lpr-form'); 
+        const video = document.getElementById('video-stream');
+        const canvas = document.getElementById('canvas-capture');
+        const captureButton = document.getElementById('capture-button');
+        const ctx = canvas.getContext('2d');
+        let stream = null;
 
-        //  para cuando se selecciona un archivo 
-        fileInput.addEventListener('change', function() {
-            if (fileInput.files.length > 0) {
-                // Si el usuario seleccionó un archivo
-                searchForm.submit();
+        // 1. Iniciar el Stream de la Cámara
+        async function startCamera() {
+            try {
+                // Pide permiso para acceder a la cámara
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error("Error al acceder a la cámara: ", err);
+                // Ocultar video si falla
+                document.getElementById('video-stream').style.display = 'none';
+                document.getElementById('capture-button').textContent = '⚠️ Cámara Fallida';
+                document.getElementById('capture-button').disabled = true;
+                alert("No se pudo iniciar la cámara. Verifica permisos del navegador.");
             }
+        }
+
+        // 2. Capturar la Imagen y Enviarla
+        captureButton.addEventListener('click', function() {
+            if (!stream) {
+                alert("Cámara no iniciada. Por favor, recargue la página o verifique permisos.");
+                return;
+            }
+            
+            // Dibuja el frame actual en el canvas
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Detiene el stream después de capturar
+            stream.getTracks().forEach(track => track.stop());
+            video.srcObject = null;
+            
+            // Convierte el canvas a Base64 (JPEG, calidad 0.9)
+            const imageDataURL = canvas.toDataURL('image/jpeg', 0.9);
+            
+            // Desactiva el botón mientras se procesa
+            captureButton.disabled = true;
+            captureButton.textContent = 'Procesando...';
+
+            // Envía el Base64 a Flask mediante AJAX (Fetch API)
+            fetch("{{ url_for('main.operador_capture_and_search') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image_data: imageDataURL })
+            })
+            // Espera JSON y fuerza la redirección
+            .then(response => response.json()) 
+            .then(data => {
+                if (data.success) {
+                    // Éxito: Flask devolvió la URL de redirección
+                    window.location.href = data.redirect_url; 
+                } else {
+                    // Fallo: Recibe el error y redirige a la página principal (para que muestre el flash error)
+                    window.location.href = "{{ url_for('main.operador_consulta') }}"; 
+                }
+            })
+            .catch(error => {
+                console.error('Error al enviar la imagen:', error);
+                alert("Error de red o servidor. Verifique la Terminal de su Mac.");
+                window.location.reload();
+            });
         });
+
+        // Inicia la cámara al cargar la página
+        window.onload = startCamera;
     </script>
 </body>
 </html>

@@ -10,14 +10,14 @@ def get_db_connection():
     return conn
 
 # ----------------------------------------------------------------------
-#  CREACIÓN DE BASE DE DATOS (sin email y con telefono)
+# FUNCIONES DE CREACIÓN DE BASE DE DATOS (FINAL Y CORREGIDO)
 # ----------------------------------------------------------------------
 
 def create_tables():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # 1. Tabla EMPLEADOS 
+    # 1. Tabla EMPLEADOS (CON TELEFONO)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS EMPLEADOS (
             id_empleado INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -58,8 +58,7 @@ def create_tables():
         )
     """)
 
-#////////////. AUN NO LA IMPLEMENTO //////////////////
-    # 4. Tabla para registrar intentos de acceso (Sistema Experto)
+    # 4. Tabla para registrar intentos de acceso (LOGS del Sistema Experto)
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS intentos_acceso (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,7 +69,7 @@ def create_tables():
         )
     """)
 
-    # 5. Tabla para historial de accesos exitosos (Sistema Experto)
+    # 5. Tabla para historial de accesos exitosos
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS accesos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,9 +79,7 @@ def create_tables():
             FOREIGN KEY (empleado_id) REFERENCES EMPLEADOS(id_empleado)
         )
     """)
-    #/////////////// DE AQUI YA /////////////
-
-
+    
     # 6. Tabla ALERTAS_SANCIONES 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS ALERTAS_SANCIONES (
@@ -101,32 +98,27 @@ def create_tables():
     conn.close()
 
 def seed_data():
-    """datos iniciales de prueba ."""
+    """Inserta datos iniciales de prueba (CON TELÉFONO DE PRUEBA)."""
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) FROM EMPLEADOS")
     if cursor.fetchone()[0] == 0:
         
-        # Insertar Empleados (ACTIVO=1 por defecto)
         cursor.execute("INSERT INTO EMPLEADOS (nombre, apellido, puesto, telefono, activo) VALUES (?, ?, ?, ?, 1)", ('Juan', 'Pérez', 'Gerente', '+525512345678')) 
         cursor.execute("INSERT INTO EMPLEADOS (nombre, apellido, puesto, telefono, activo) VALUES (?, ?, ?, ?, 1)", ('María', 'López', 'Operador', '+525587654321')) 
 
-        # Insertar Vehículos 
         cursor.execute("INSERT INTO VEHICULOS (placa, marca, modelo, anio, color) VALUES (?, ?, ?, ?, ?)", ('ABC1234', 'Nissan', 'Versa', 2020, 'Gris'))
         cursor.execute("INSERT INTO VEHICULOS (placa, marca, modelo, anio, color) VALUES (?, ?, ?, ?, ?)", ('XYZ5678', 'Honda', 'CRV', 2018, 'Rojo'))
         cursor.execute("INSERT INTO VEHICULOS (placa, marca, modelo, anio, color) VALUES (?, ?, ?, ?, ?)", ('QWE9012', 'Mazda', '3', 2023, 'Negro')) 
         
-        cursor.execute("INSERT INTO EMPLEADO_VEHICULO_ASOCIACION (fk_empleado, fk_vehiculo, estado_acceso, fecha_registro) VALUES (?, ?, ?, DATETIME('now'))", (1, 1, 'ACTIVO')) 
-        cursor.execute("INSERT INTO EMPLEADO_VEHICULO_ASOCIACION (fk_empleado, fk_vehiculo, estado_acceso, fecha_registro) VALUES (?, ?, ?, DATETIME('now'))", (2, 2, 'ACTIVO')) 
-        cursor.execute("INSERT INTO EMPLEADO_VEHICULO_ASOCIACION (fk_empleado, fk_vehiculo, estado_acceso, fecha_registro) VALUES (?, ?, ?, DATETIME('now'))", (1, 3, 'ACTIVO')) 
+        conn.execute("INSERT INTO EMPLEADO_VEHICULO_ASOCIACION (fk_empleado, fk_vehiculo, estado_acceso, fecha_registro) VALUES (?, ?, ?, DATETIME('now'))", (1, 1, 'ACTIVO')) 
+        conn.execute("INSERT INTO EMPLEADO_VEHICULO_ASOCIACION (fk_empleado, fk_vehiculo, estado_acceso, fecha_registro) VALUES (?, ?, ?, DATETIME('now'))", (2, 2, 'ACTIVO')) 
+        conn.execute("INSERT INTO EMPLEADO_VEHICULO_ASOCIACION (fk_empleado, fk_vehiculo, estado_acceso, fecha_registro) VALUES (?, ?, ?, DATETIME('now'))", (1, 3, 'ACTIVO')) 
 
         conn.commit()
     conn.close()
 
-# --- FUNCIONES DE REGISTRO Y LECTURA ---
-# (Las demás funciones get_full_plate_info, register_employee_vehicle, etc., 
-# ya usan los nombres de columnas  'id_empleado' y 'telefono', 
-
+# --- FUNCIONES CRUD (Se mantienen correctas) ---
 
 def get_all_plates_association():
     conn = get_db_connection()
@@ -138,7 +130,7 @@ def get_all_plates_association():
         JOIN VEHICULOS AS T3 ON T1.fk_vehiculo = T3.id_vehiculo
     """).fetchall()
     conn.close()
-    return plates
+    return [dict(row) for row in plates]
 
 def update_acceso_estado(asociacion_id, nuevo_estado):
     conn = get_db_connection()
@@ -283,7 +275,6 @@ def register_employee_vehicle(employee_data, vehicle_data):
         conn.close()
 
 def count_alerts_for_association(asociacion_id):
-    """Cuenta el número total de alertas para una asociación específica."""
     conn = get_db_connection()
     cursor = conn.execute(
         "SELECT COUNT(*) FROM ALERTAS_SANCIONES WHERE fk_asociacion = ?",
@@ -294,7 +285,6 @@ def count_alerts_for_association(asociacion_id):
     return count
 
 def get_employee_details_by_association(asociacion_id):
-    """Obtiene el teléfono y nombre del empleado basado en el ID de la asociación."""
     conn = get_db_connection()
     info = conn.execute("""
         SELECT T2.telefono, T2.nombre 
